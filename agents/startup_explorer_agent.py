@@ -5,7 +5,7 @@ from state import AgentState  # 공통 state 타입
 llm = ChatOpenAI(model="gpt-4", temperature=0)
 search_tool = TavilySearchResults()
 
-def startup_explorer(state: AgentState) -> Annotated[AgentState, "startup_list"]:
+def startup_explorer_agent(state: AgentState) -> Annotated[AgentState, "startup_list"]:
     country = state["country"]
     domain = state["domain"]
 

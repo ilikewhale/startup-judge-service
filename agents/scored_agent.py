@@ -3,7 +3,7 @@ from state import AgentState
 
 llm = ChatOpenAI(model="gpt-4", temperature=0)
 
-def scorecard_method(state: AgentState) -> Annotated[AgentState, "investment_decision"]:
+def scored_agent(state: AgentState) -> Annotated[AgentState, "investment_decision"]:
     startup_name = state["startup_list"][0] if state["startup_list"] else "Unknown Startup"
     founder_info = state["founder_reputation"].get(startup_name, {})
     market_info = state["market_analysis"].get(startup_name, {})

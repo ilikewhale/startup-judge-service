@@ -19,7 +19,7 @@ MODEL_NAME = get_model_name(LLMs.GPT4)
 
 # PDF 파일로부터 검색 체인 생성
 def create_pdf_retriever():
-    file_path = ["data/2023 국내외 AI 규제 및 정책 동향.pdf", "data/인공지능(AI) 관련 국내외 법제 동향.pdf"]
+    file_path = ["data/legal_risk/2023 국내외 AI 규제 및 정책 동향.pdf", "data/legal_risk/인공지능(AI) 관련 국내외 법제 동향.pdf"]
     pdf_file = PDFRetrievalChain(file_path).create_chain()
     pdf_retriever = pdf_file.retriever
     
@@ -427,7 +427,7 @@ def create_legal_risk_graph():
     # 그래프 컴파일 및 반환
     return workflow.compile()
 
-async def legal_risk_analysis_agent(company: str, domain: str, tech_summary: str, country: str):
+async def legal_risk_analysis_agent(company: str, domain: str, country: str, tech_summary: str):
     """법적 리스크 분석 에이전트 실행 함수"""
     
     # 법적/규제 리스크 그래프 생성
