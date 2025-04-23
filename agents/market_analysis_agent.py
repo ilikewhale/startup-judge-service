@@ -1,4 +1,6 @@
 
+from functools import partial
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -62,13 +64,13 @@ def look_for_demand(query: str)-> str:
     results = tavily_tool.invoke(f"{query} market demand analysis")
     return f"{query}에 대한 시장 수요 분석 결과:\n{results}"
 
-def market_analysis(state: AgentState):
+def market_analysis(state: AgentState, domain, country):
     """
     일반적인 시장 분석을 수행
     """
 
-    domain= state["domain"]
-    country= state["country"]
+    # domain= state["domain"]
+    # country= state["country"]
     print(domain)
 
     market_tools = [tavily_tool, look_for_demand, market_research]
@@ -131,11 +133,11 @@ def market_analysis(state: AgentState):
     
     return state
 
-def create_workflow():
+def create_workflow(state: AgentState):
     memory=MemorySaver()
     workflow=StateGraph(AgentState)
 
-    workflow.add_node("Market_Analyze", market_analysis)
+    workflow.add_node("Market_Analyze", partial(market_analysis, domain="스포츠", country="미국"))
 
     workflow.add_edge("Market_Analyze", END)
     workflow.add_edge(START, "Market_Analyze")
@@ -145,7 +147,7 @@ def create_workflow():
 
     return workflow.compile(checkpointer=memory)
 
-def run_market_analysis(query: str):
+def market_analysis_agent(query: str):
     """
     Run the market analysis workflow with the given query.
     """
@@ -165,9 +167,9 @@ def run_market_analysis(query: str):
         "final_report": "",
     }
 
-    graph= create_workflow()
+    graph= create_workflow(state)
     config={"configurable": {"thread_id": str(uuid.uuid4())}}
 
     result = graph.invoke(state, config)
+    
     return result 
-

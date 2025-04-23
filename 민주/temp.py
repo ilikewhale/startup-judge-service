@@ -2,7 +2,7 @@ import uuid
 from dotenv import load_dotenv
 from langchain_teddynote import logging
 import asyncio
-from market_analysis import run_market_analysis
+from market_analysis import market_analysis_agent
 
 def main():
     load_dotenv()
@@ -11,7 +11,7 @@ def main():
 
     # user = input("스타트업 분석을 위한 도메인과 나라를 입력해주세요.")
     
-    result= run_market_analysis("스포츠")
+    result= market_analysis_agent("스포츠")
 
     print(result)
 
