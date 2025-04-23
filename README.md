@@ -61,15 +61,14 @@
 
 ## 🧩 Architecture  
 (그래프 이미지 삽입 예정 - 멀티 에이전트 기반 평가 흐름)
-
----
-
-## 📁 Directory Structure
 <details>
 <summary>Click to toggle! Agents Workflow</summary>
   <img src="https://github.com/user-attachments/assets/3281c8ab-26f4-404e-8023-8a55e9491132", alt="agents1">
   <img src="https://github.com/user-attachments/assets/45bc23af-db87-4206-98ce-6d05d9f1be4a", alt="agents2">
 </details>
+---
+
+## 📁 Directory Structure
 
 ---
 
