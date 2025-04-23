@@ -1,4 +1,3 @@
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,24 +18,10 @@ from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 from langchain_teddynote.models import get_model_name, LLMs
 
-import uuid
-
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, START, END
 
-class AgentState(TypedDict):
-    domain: Annotated[str, "Domain"]
-    country: Annotated[str, "Country"]
-
-    startup_list: Annotated[list[str], "Startup_list"]   # 스타트업 탐색 에이전트가 생성하는 주요 기업명 목록
-    startup_profiles: Annotated[dict[str, dict], "Startup_profiles"]   # 스타트업별 정보 종합 저장소
-    tech_summary: Annotated[dict[str, str], "Tech_summary"]  # 각 스타트업 기술 요약 정보
-    founder_reputation: Annotated[dict[str, dict], "Founder_reputation"]  # 창업자 이력 + 평판 정보
-    market_analysis: Annotated[dict[str, dict], "Market_analysis"]  # 시장성 분석 결과
-    legal_risk: Annotated[dict[str, str], "Legal_risk"]  # 법적/규제 이슈 요약
-    competitor_info: Annotated[dict[str, dict], "Competitor_info"]  # 경쟁사 비교 분석
-    investment_decision: Annotated[dict[str, str], "Investment_decision"]  # 투자 판단 (투자 / 보류 + 사유)
-    final_report: Annotated[str, "Final_report"]  # 보고서 생성 에이전트의 출력물 (PDF or Text)
+from state import AgentState
 
 tavily_tool=TavilySearchResults(max_results=5)
 
@@ -48,6 +33,7 @@ def market_research(query: str)-> str:
     Args:
         query: 검색할 도메인이나 키워드
     """
+     
      results = tavily_tool.invoke(f"{query} market trends analysis")
      return str(results)
 
@@ -59,16 +45,17 @@ def look_for_demand(query: str)-> str:
     Args:
         query: 검색할 도메인이나 키워드 
     """
+    
     results = tavily_tool.invoke(f"{query} market demand analysis")
     return f"{query}에 대한 시장 수요 분석 결과:\n{results}"
 
-def market_analysis(state: AgentState):
+def market_analysis_agent(state: AgentState, domain, country):
     """
     일반적인 시장 분석을 수행
     """
 
-    domain= state["domain"]
-    country= state["country"]
+    # domain= state["domain"]
+    # country= state["country"]
     print(domain)
 
     market_tools = [tavily_tool, look_for_demand, market_research]
@@ -99,14 +86,13 @@ def market_analysis(state: AgentState):
         state["market_analysis"] = {}
     
     # 시장 분석 실행
-    result = market_agent.invoke({
+    result = market_agent.ainvoke({
         "input": f"{domain} 도메인/산업의 시장 분석을 수행해주세요. 특히 {country} 시장에 초점을 맞춰주세요."
     })
     
-
-    print("==========================================\n\n")
-    print(result)
-    print("==========================================\n\n")
+    # print("==========================================\n\n")
+    # print(result)
+    # print("==========================================\n\n")
 
     # 결과 처리 - AIMessage 형태의 최종 응답 확인
     final_responses = [msg for msg in result.get("messages", []) 
@@ -127,47 +113,7 @@ def market_analysis(state: AgentState):
     # }
     
     # 일반 시장 분석 결과 저장
-    state["market_analysis"]["general"] = analysis_output
+    state["market_analysis"] = analysis_output
+    # print(analysis_output)
     
-    return state
-
-def create_workflow():
-    memory=MemorySaver()
-    workflow=StateGraph(AgentState)
-
-    workflow.add_node("Market_Analyze", market_analysis)
-
-    workflow.add_edge("Market_Analyze", END)
-    workflow.add_edge(START, "Market_Analyze")
-
-    # Set the entry point
-    # workflow.set_entry_point("agent") # 스타트업 검색
-
-    return workflow.compile(checkpointer=memory)
-
-def run_market_analysis(query: str):
-    """
-    Run the market analysis workflow with the given query.
-    """
-    print("되는거맞나")
-    # Initialize the state
-    state = {
-        "domain": query,
-        "country": "미국",
-        "startup_list": {},
-        "startup_profiles": {},
-        "tech_summary": {},
-        "founder_reputation": {},
-        "market_analysis": {},
-        "legal_risk": {},
-        "competitor_info": {},
-        "investment_decision": {},
-        "final_report": "",
-    }
-
-    graph= create_workflow()
-    config={"configurable": {"thread_id": str(uuid.uuid4())}}
-
-    result = graph.invoke(state, config)
-    return result 
-
+    return analysis_output

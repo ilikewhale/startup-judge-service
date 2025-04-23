@@ -1,5 +1,6 @@
 import asyncio
 from competitor_analysis import competitor_analysis
+# from agents.competitor_analysis_agent import competitor_analysis
 
 async def main():
     result = await competitor_analysis("SK")
