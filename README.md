@@ -14,10 +14,7 @@
   투자 적합성을 종합적으로 평가합니다.
 
 - **Method**
-  - **Agentic RAG (Retrieval-Augmented Generation)** 기반의 멀티 에이전트 아키텍처
-  - 기술력, 창업자 평판, 시장성, 리스크, 경쟁사 등 주요 요소를 평가하는 전용 Agent 구성
-  - 병렬 실행 및 조건 기반 루프(flow control) 설계
-  - 자동 판단 및 투자 보고서 생성까지 완전 자동화된 투자 평가 파이프라인
+  - **Agentic RAG (Retrieval-Augmented Generation)** 기반의 멀티 에이전트 아키텍처 (AI Agent + Agentic RAG)
 
 - **Tools**
   - **Tavily Web Search API**: 실시간 웹 탐색을 통한 정보 수집
