@@ -64,7 +64,7 @@ def look_for_demand(query: str)-> str:
     results = tavily_tool.invoke(f"{query} market demand analysis")
     return f"{query}에 대한 시장 수요 분석 결과:\n{results}"
 
-def market_analysis(state: AgentState, domain, country):
+async def market_analysis_agent(state: AgentState, domain, country):
     """
     일반적인 시장 분석을 수행
     """
@@ -131,7 +131,9 @@ def market_analysis(state: AgentState, domain, country):
     # 일반 시장 분석 결과 저장
     state["market_analysis"]["general"] = analysis_output
     
-    return state
+    return analysis_output
+
+
 
 def create_workflow(state: AgentState):
     memory=MemorySaver()
@@ -147,7 +149,7 @@ def create_workflow(state: AgentState):
 
     return workflow.compile(checkpointer=memory)
 
-def market_analysis_agent(query: str):
+def run_market_analysis(query: str):
     """
     Run the market analysis workflow with the given query.
     """
