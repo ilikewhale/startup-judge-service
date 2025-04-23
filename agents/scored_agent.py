@@ -1,9 +1,5 @@
-import json
-
-from typing import Annotated
+from util.imports import *
 from state import AgentState
-from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
 
 llm = ChatOpenAI(model="gpt-4", temperature=0)
 
@@ -16,12 +12,19 @@ def scored_agent(state: AgentState) -> Annotated[AgentState, "investment_decisio
     legal_info = state["legal_risk"].get(startup_name, "")
 
     summary = f"""
-    You are an expert early-stage startup investor using the Scorecard Valuation Method.
+    You are a highly conservative early-stage startup investor using the Scorecard Valuation Method.
 
-    You are tasked with evaluating the startup: {startup_name}
+    You are tasked with strictly evaluating the startup: {startup_name}
 
     Based on the following information, score the startup on the six categories below. 
     Each score should be from 0 to 10 (10 = excellent, 0 = poor).
+
+    You must carefully evaluate:
+    - Whether the technology is realistically implementable and verified
+    - Whether the legal or regulatory risks could significantly hinder growth
+    - Whether there is actual evidence of demand, not just potential
+
+    Do not give high scores without clear justification. Only startups that demonstrate outstanding performance across all categories should receive an \"Invest\" decision.
     ---
 
     ## Startup Summary : 
@@ -70,8 +73,9 @@ def scored_agent(state: AgentState) -> Annotated[AgentState, "investment_decisio
     1. Assign each category a score from 0 to 10.
     2. Multiply each score by its weight to calculate the total score.
     3. Based on the total score:
-        - If score ≥ 70 → decision: "Invest"
-        - If score < 70 → decision: "Hold"
+        - If score ≥ 75 → decision: "Invest"
+        - If 60 ≤ score < 75 → decision: "Hold"
+        - If score < 60 → decision: "Avoid"
     4. Please output the results in Korean.
 
     DO NOT return Markdown or code block syntax (like ```). 

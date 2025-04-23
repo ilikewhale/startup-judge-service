@@ -49,7 +49,7 @@ def look_for_demand(query: str)-> str:
     results = tavily_tool.invoke(f"{query} market demand analysis")
     return f"{query}에 대한 시장 수요 분석 결과:\n{results}"
 
-async def market_analysis_agent(state: AgentState, domain, country):
+def market_analysis_agent(state: AgentState, domain, country):
     """
     일반적인 시장 분석을 수행
     """
