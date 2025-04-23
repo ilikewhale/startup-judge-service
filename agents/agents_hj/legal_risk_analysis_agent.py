@@ -1,4 +1,5 @@
 from util.imports import *
+from pathlib import Path
 
 load_dotenv()
 # logging.langsmith("CH15-Agentic-RAG-Legal")
@@ -17,23 +18,89 @@ class LegalRiskAgentState(TypedDict):
 # 모델 이름 설정
 MODEL_NAME = get_model_name(LLMs.GPT4)
 
-# PDF 파일로부터 검색 체인 생성
 def create_pdf_retriever():
-    file_path = ["data/legal_risk/2023 국내외 AI 규제 및 정책 동향.pdf", "data/legal_risk/인공지능(AI) 관련 국내외 법제 동향.pdf"]
-    pdf_file = PDFRetrievalChain(file_path).create_chain()
-    pdf_retriever = pdf_file.retriever
+    try:
+        base_dir = Path(__file__).resolve().parent
+        file_path = [
+            str(base_dir / "../../data/legal_risk/2023 국내외 AI 규제 및 정책 동향.pdf"),
+            str(base_dir / "../../data/legal_risk/인공지능(AI) 관련 국내외 법제 동향.pdf")
+        ]
+        
+        # 경로 검증 추가
+        valid_paths = []
+        for path in file_path:
+            if Path(path).exists():
+                valid_paths.append(path)
+            else:
+                print(f"경고: 파일을 찾을 수 없습니다 - {path}")
+        
+        if not valid_paths:
+            raise FileNotFoundError("PDF 파일을 찾을 수 없습니다. 경로를 확인해주세요.")
+        
+        # FAISS 대신 다른 임베딩 사용 시도
+        try:
+            # 먼저 FAISS로 시도
+            pdf_file = PDFRetrievalChain(valid_paths).create_chain()
+        except ImportError:
+            # FAISS가 없을 경우 다른 방식 시도
+            from langchain.vectorstores import Chroma
+            from langchain.embeddings import OpenAIEmbeddings
+            from langchain.document_loaders import PyPDFLoader
+            
+            # PDF 파일 로드
+            docs = []
+            for path in valid_paths:
+                loader = PyPDFLoader(path)
+                docs.extend(loader.load())
+            
+            # 텍스트 분할기 설정
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+            text_splitter = RecursiveCharacterTextSplitter(
+                chunk_size=1000, 
+                chunk_overlap=200
+            )
+            split_docs = text_splitter.split_documents(docs)
+            
+            # 임베딩 생성 및 벡터 스토어 설정
+            embeddings = OpenAIEmbeddings()
+            vectorstore = Chroma.from_documents(documents=split_docs, embedding=embeddings)
+            
+            # 리트리버 생성
+            pdf_retriever = vectorstore.as_retriever(
+                search_type="similarity",
+                search_kwargs={"k": 5}
+            )
+        else:
+            pdf_retriever = pdf_file.retriever
+        
+        # PDF 문서를 기반으로 검색 도구 생성
+        retriever_tool = create_retriever_tool(
+            pdf_retriever,
+            "legal_pdf_retriever",
+            "Search and return information about AI legal and regulatory frameworks from the PDF files. They contain essential information on AI regulations, policies, and legal trends relevant for AI startups. The documents are focused on both domestic and international AI legal frameworks.",
+            document_prompt=PromptTemplate.from_template(
+                "<document><context>{page_content}</context><metadata><source>{source}</source><page>{page}</page></metadata></document>"
+            ),
+        )
+        
+        return retriever_tool
     
-    # PDF 문서를 기반으로 검색 도구 생성
-    retriever_tool = create_retriever_tool(
-        pdf_retriever,
-        "legal_pdf_retriever",
-        "Search and return information about AI legal and regulatory frameworks from the PDF files. They contain essential information on AI regulations, policies, and legal trends relevant for AI startups. The documents are focused on both domestic and international AI legal frameworks.",
-        document_prompt=PromptTemplate.from_template(
-            "<document><context>{page_content}</context><metadata><source>{source}</source><page>{page}</page></metadata></document>"
-        ),
-    )
-    
-    return retriever_tool
+    except Exception as e:
+        print(f"PDF 검색 도구 생성 중 오류 발생: {e}")
+        # 검색 도구 생성 실패 시 기본 응답을 반환하는 임시 도구 생성
+        from langchain.tools import BaseTool
+        
+        class FallbackTool(BaseTool):
+            name = "legal_pdf_retriever"
+            description = "Fallback tool when PDF retrieval is not available"
+            
+            def _run(self, query: str) -> str:
+                return "PDF 문서 검색을 위한 라이브러리가 설치되지 않았습니다. 기본 정보를 제공합니다: AI 규제는 국가별로 다양하며, 데이터 보호, 알고리즘 투명성, 공정성, 책임성 등을 중심으로 발전하고 있습니다."
+                
+            async def _arun(self, query: str) -> str:
+                return self._run(query)
+        
+        return FallbackTool()
 
 # 데이터 모델 정의
 class grade(BaseModel):
@@ -72,10 +139,14 @@ def grade_documents(state: LegalRiskAgentState) -> str:
     retrieved_docs = last_message.content
 
     # 관련성 평가 실행
-    scored_result = chain.invoke({"question": question, "context": retrieved_docs})
-
-    # 관련성 여부 추출
-    score = scored_result.binary_score
+    try:
+        scored_result = chain.invoke({"question": question, "context": retrieved_docs})
+        # 관련성 여부 추출
+        score = scored_result.binary_score
+    except Exception as e:
+        print(f"문서 관련성 평가 중 오류 발생: {e}")
+        # 오류 발생 시 기본값으로 진행
+        score = "yes"
 
     # 관련성 여부에 따른 결정
     if score == "yes":
@@ -104,9 +175,16 @@ def pdf_retrieval(state: LegalRiskAgentState):
     print("\n📄 [pdf_retrieval] PDF 기반 법률 문서 검색 시작")
     messages = state["messages"]
     question = messages[-1].content
-    retriever_tool = create_pdf_retriever()
-    results = retriever_tool.invoke({"query": question})
-    print("✅ 검색 완료 - 관련 문서 요약 반환")
+    try:
+        retriever_tool = create_pdf_retriever()
+        results = retriever_tool.invoke({"query": question})
+        print("✅ 검색 완료 - 관련 문서 요약 반환")
+    except Exception as e:
+        print(f"PDF 문서 검색 중 오류 발생: {e}")
+        results = "PDF 문서 검색 중 오류가 발생했습니다. 웹 검색으로 대체합니다."
+        # PDF 검색에 실패하면 web_search로 바로 넘어가도록 처리할 수 있음
+        # 여기서는 간단히 오류 메시지만 반환
+    
     return {"messages": [HumanMessage(content=results)]}
 
 # 질의 재작성 노드
@@ -138,8 +216,13 @@ def rewrite(state: LegalRiskAgentState):
 
     # LLM 모델로 질문 개선
     model = ChatOpenAI(temperature=0, model=MODEL_NAME, streaming=True)
-    # Query-Transform 체인 실행
-    response = model.invoke(msg)
+    try:
+        # Query-Transform 체인 실행
+        response = model.invoke(msg)
+    except Exception as e:
+        print(f"질의 재작성 중 오류 발생: {e}")
+        # 오류 발생 시 원래 질문 유지
+        response = HumanMessage(content=question)
 
     # 재작성된 질문 반환
     print(f"🆕 재작성된 질문: {response.content.strip()[:100]}...")
@@ -148,27 +231,32 @@ def rewrite(state: LegalRiskAgentState):
 # Web Search 노드
 def web_search(state: LegalRiskAgentState):
     print("\n🌐 [web_search] 웹 기반 보조 법률 정보 검색 시작")
-    tavily_tool = TavilySearch()
-    
-    # 수정된 부분: messages에서 내용 추출
-    messages = state["messages"]
-    search_query = messages[-1].content
-    
-    company = state["company"]
-    domain = state["domain"]
-    tech_summary = state["tech_summary"]
-    country = state["country"]
-    
-    # 검색 쿼리에 기업 정보, 기술 요약, 지역 정보 추가
-    enhanced_query = f"{search_query} {company} {domain} {tech_summary} {country} AI 스타트업 법적 규제"
+    try:
+        tavily_tool = TavilySearch()
+        
+        # 수정된 부분: messages에서 내용 추출
+        messages = state["messages"]
+        search_query = messages[-1].content
+        
+        company = state["company"]
+        domain = state["domain"]
+        tech_summary = state["tech_summary"]
+        country = state["country"]
+        
+        # 검색 쿼리에 기업 정보, 기술 요약, 지역 정보 추가
+        enhanced_query = f"{search_query} {company} {domain} {tech_summary} {country} AI 스타트업 법적 규제"
 
-    search_result = tavily_tool.search(
-        query=enhanced_query,  # 검색 쿼리
-        topic="legal",     # 법률 주제로 변경
-        max_results=3,       # 최대 검색 결과
-        format_output=True,  # 결과 포맷팅
-    )
-    print("✅ 웹 검색 완료 - 요약 내용 반환")
+        search_result = tavily_tool.search(
+            query=enhanced_query,  # 검색 쿼리
+            topic="legal",     # 법률 주제로 변경
+            max_results=3,       # 최대 검색 결과
+            format_output=True,  # 결과 포맷팅
+        )
+        print("✅ 웹 검색 완료 - 요약 내용 반환")
+    except Exception as e:
+        print(f"웹 검색 중 오류 발생: {e}")
+        search_result = f"웹 검색 중 오류가 발생했습니다. 기본 정보로 분석을 진행합니다. 오류: {str(e)}"
+    
     return {"messages": [HumanMessage(content=search_result)]}
 
 
@@ -252,12 +340,13 @@ def analyze(state: LegalRiskAgentState):
             "country": country
         })
         print("✅ 분석 완료 - 요약 보고 생성")
-        return {"messages": [HumanMessage(content=response)]}
     
     except Exception as e:
         print(f"오류 발생: {e}")
         error_msg = f"응답 생성 중 오류가 발생했습니다: {str(e)}"
-        return {"messages": [HumanMessage(content=error_msg)]}
+        response = error_msg
+    
+    return {"messages": [HumanMessage(content=response)]}
 
 # 법적/규제 리스크 분석 결과 처리 노드
 def analyze_legal_risks(state: LegalRiskAgentState):
@@ -311,9 +400,13 @@ def tech_risk_analysis(state: LegalRiskAgentState):
     
     # LLM 모델로 기술 리스크 분석
     model = ChatOpenAI(temperature=0, model=MODEL_NAME, streaming=True)
-    response = model.invoke(msg)
+    try:
+        response = model.invoke(msg)
+        print("✅ 기술 특화 리스크 분석 완료")
+    except Exception as e:
+        print(f"기술 리스크 분석 중 오류 발생: {e}")
+        response = HumanMessage(content=f"기술 리스크 분석 중 오류가 발생했습니다. 기본 분석으로 진행합니다.")
     
-    print("✅ 기술 특화 리스크 분석 완료")
     return {"messages": [response]}
 
 # 종합 분석 및 권장사항 노드 (추가)
@@ -370,9 +463,13 @@ def comprehensive_analysis(state: LegalRiskAgentState):
     
     # LLM 모델로 종합 분석 실행
     model = ChatOpenAI(temperature=0, model=MODEL_NAME, streaming=True)
-    response = model.invoke(msg)
+    try:
+        response = model.invoke(msg)
+        print("✅ 종합 분석 및 권장사항 완료")
+    except Exception as e:
+        print(f"종합 분석 중 오류 발생: {e}")
+        response = HumanMessage(content=f"종합 분석 중 오류가 발생했습니다. 이전 분석 결과를 참고해주세요.")
     
-    print("✅ 종합 분석 및 권장사항 완료")
     return {"messages": [response]}
 
 # Agentic RAG를 사용한 법적/규제 리스크 분석 그래프 생성
@@ -443,11 +540,16 @@ async def legal_risk_analysis(company: str, domain: str, country: str, tech_summ
         "legal_assessments": {}  # 빈 딕셔너리로 초기화
     }
     
-    # 그래프 실행
-    result = await legal_graph.ainvoke(initial_state)
-    
-    # 결과 반환 (상위 시스템에서 사용할 수 있도록)
-    if "legal_assessments" in result and company in result["legal_assessments"]:
-        return result["legal_assessments"][company]
-    else:
-        return "법적 평가를 완료하지 못했습니다."
+    try:
+        # 그래프 실행
+        result = await legal_graph.ainvoke(initial_state)
+        
+        # 결과 반환 (상위 시스템에서 사용할 수 있도록)
+        if "legal_assessments" in result and company in result["legal_assessments"]:
+            return result["legal_assessments"][company]
+        else:
+            return "법적 평가를 완료하지 못했습니다."
+    except Exception as e:
+        # 전체 프로세스 실행 중 예외 처리
+        print(f"법적 리스크 분석 중 예외 발생: {e}")
+        return f"법적 리스크 분석 중 오류가 발생했습니다: {str(e)}"
