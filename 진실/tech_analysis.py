@@ -49,19 +49,25 @@ def llm_answer(state: TechSummaryAgent) -> TechSummaryAgent:
     context = state["context"]  # 웹 검색 결과로 받은 경쟁사 분석 정보
 
     # 경쟁사 분석 결과를 요약하고 핵심 인사이트를 추출하는 프롬프트
-    report_prompt = f"""
-    당신은 {latest_question}의 기술력을 분석하는 전문가입니다.
-    주어진 정보를 바탕으로 다음 구조로 요약해주세요:
+    report_prompt = f"""You are an expert analyzing the technological capabilities of {latest_question}.  
+    Please summarize the information according to the following REQUEST.  
 
-    1. 핵심 기술 개요: 기업의 주요 기술과 특징을 간략하게 요약
-    2. 기술적 장점: 경쟁사 대비 우수한 점
-    3. 기술적 단점 또는 과제: 개선이 필요한 부분
-    4. 기술 경쟁력 평가: 전반적인 기술 경쟁력에 대한 평가
+    REQUEST:  
+    1. Summarize the key points using **bullet points (•)**.  
+    2. Do NOT include any unnecessary information.
+    3. All responses must be written in **Korean**. 
+    4. Structure the summary based on the following format:
 
-    객관적인 사실에 기반하여 작성하고, 정보가 부족한 부분은 '정보 없음'으로 표시하세요.
-    기술 분석 정보 : {context}
+        1) Core Technology Overview: Brief summary of the company’s key technologies and features  
+        2) Technical Strengths: Advantages compared to competitors  
+        3) Technical Weaknesses or Challenges: Areas that need improvement  
+        4) Technology Competitiveness Evaluation: Overall assessment of the company’s technological edge  
+
+    CONTEXT:  
+    {context}  
+
+    SUMMARY: '' 
     """
-
     response = llm.invoke(report_prompt)
 
     # 생성된 답변과 (유저의 질문, 답변) 메시지를 상태에 저장
@@ -135,13 +141,13 @@ def query_rewrite(state: TechSummaryAgent) -> TechSummaryAgent:
         # Examples
 
         **Input**:
-        "What is the technology behind MayAI?"
+        "MayAI"
 
         **Output**:
         "What are the core technologies developed by MayAI, and what are their key advantages and limitations?"
 
         **Input**:
-        "How good is Upstage's tech?"
+        "Upstage"
 
         **Output**:
         "What AI technologies has Upstage developed, and how do their strengths and limitations compare to competitors?"
