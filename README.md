@@ -75,8 +75,9 @@
 </details>
 
 ---
-```
+
 ## 📁 Directory Structure
+```
 📦 STARTUP-JUDGE-SERVICE
  ┣ 📂 _pycache_
  ┣ 📂 agents
