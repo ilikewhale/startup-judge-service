@@ -82,12 +82,6 @@
  ┣ 📂 agents
  ┣ 📂 data
  ┣ 📂 reports
- ┣ 📂 founder_reputation_agent
- ┣ 📂 market_analysis_agent
- ┣ 📂 startup_explore_agent
- ┣ 📂 legal_risk_agent
- ┣ 📂 tech_summary_agent
- ┣ 📂 competitor_analysis_agent
  ┣ 📜 .env
  ┣ 📜 .gitignore
  ┣ 📜 main.py
