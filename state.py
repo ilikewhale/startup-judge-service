@@ -1,4 +1,4 @@
-from typing import TypedDict, List, Dict
+from typing import TypedDict, Annotated
 
 class AgentState(TypedDict):
     domain: Annotated[str, "Domain"]
