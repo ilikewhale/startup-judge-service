@@ -22,12 +22,17 @@ class FounderState(TypedDict):
     final_summary: Annotated[str, "최종 요약"]
     messages: Annotated[list[BaseMessage], "메시지"]
     relevance: Annotated[bool, "관련성"]
+    retry_count: Annotated[int, "재시도 횟수"]  # 추가된 필드
 
 # 1. 창업자 식별 에이전트
 def founder_identifier(state: FounderState) -> FounderState:
     
     tavily = TavilySearch()
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+    # 재시도 횟수 증가
+    current_retry = state['retry_count'] + 1
+
     search_query = f"{state['company_name']} {state['domain']} 스타트업 창업자 CEO 대표 설립자"
     
     search_results = tavily.search(
@@ -50,6 +55,13 @@ def founder_identifier(state: FounderState) -> FounderState:
     다음 형식으로 응답해주세요:
     창업자 이름: [이름]
     창업자 역할: [역할 (예: CEO, 공동창업자, CTO 등)]
+
+    IMPORTANT: 반드시 정확한 이 기업의 창업자(설립자) 또는 현재 CEO의 이름과 역할을 추출해주세요.
+
+    IMPORTANT:
+    기업의 창업자(설립자) 또는 현재 CEO를 못찾는 경우 반드시 아래와 같이 출력하세요
+    창업자 이름: "정보 없음"
+    창업자 역할: "정보 없음" 
     """
     
     extraction_response = llm.invoke(extraction_prompt)
@@ -69,7 +81,8 @@ def founder_identifier(state: FounderState) -> FounderState:
     
     return FounderState(
         founder_name=founder_name,
-        founder_role=founder_role
+        founder_role=founder_role,
+        retry_count=current_retry  # 재시도 횟수 업데이트
     )
 
 # 2. 창업자 정보 수집 에이전트
@@ -126,6 +139,13 @@ def reputation_analyzer(state: FounderState) -> FounderState:
     3. 주요 부정적 언급:
     4. 전반적인 평판 판단:
     5. 투자 관점에서의 시사점:
+
+    
+    IMPORTANT: 창업자 이름: "정보 없음", 창업자 역할: "정보 없음" 인 경우에는 반드시 아래와 같이 출력해주세요
+    다음 기업에 대한 창업자 정보를 충분히 찾지 못했습니다:
+    기업명: {state['company_name']}
+    도메인: {state['domain']}
+
     """
     
     sentiment_response = llm.invoke(sentiment_prompt)
@@ -160,6 +180,10 @@ def summary_generator(state: FounderState) -> FounderState:
     3. 평판 분석 요약 (미디어/SNS에서의 이미지)
     4. 강점 및 약점
     5. 투자 관점에서의 시사점 (창업자 역량이 기업 성장에 미치는 영향)
+
+    IMPORTANT:
+    기업의 창업자(설립자) 또는 현재 CEO를 못찾는 경우 반드시 아래와 같이 출력하세요
+    "창업자의 정보를 충분히 찾지 못했습니다."
     """
     
     summary_response = llm.invoke(summary_prompt)
@@ -173,6 +197,28 @@ def summary_generator(state: FounderState) -> FounderState:
     
     return FounderState(
         final_summary=final_summary,
+        messages=messages
+    )
+
+def none_summary_generator(state: FounderState) -> FounderState:
+    print(f"⚠️ {state['company_name']} 관련 충분한 정보를 찾지 못했습니다. 대체 요약 생성 중...")
+    
+    # 고정된 메시지 생성
+    fallback_summary = f"""다음 기업에 대한 창업자 정보를 충분히 찾지 못했습니다:
+기업명: {state['company_name']}
+도메인: {state['domain']}
+
+재시도 횟수 한계(10회)에 도달했으나 적절한 정보를 찾지 못했습니다.
+직접적인 컨택이나 추가 조사를 통해 더 많은 정보를 수집하는 것을 권장합니다."""
+    
+    # 메시지 생성
+    messages = [
+        HumanMessage(content=f"{state['company_name']} ({state['domain']}) 기업 분석 시도 결과"),
+        AIMessage(content=fallback_summary)
+    ]
+    
+    return FounderState(
+        final_summary=fallback_summary,
         messages=messages
     )
 
@@ -223,7 +269,10 @@ def profile_relevance_check(state: FounderState) -> FounderState:
 
 # 조건부 라우팅 함수
 def is_relevant(state: FounderState) -> str:
-    if state["relevance"]:
+    if state["retry_count"] >= 8:
+        print("🛑 최대 재시도 횟수(8회) 초과! 대체 요약으로 진행")
+        return "none"
+    elif state["relevance"]:
         return "yes"
     else:
         return "no"
@@ -239,31 +288,34 @@ def makeWorkflow():
     workflow.add_node("profile_relevance_check", profile_relevance_check)
     workflow.add_node("reputation_analyzer", reputation_analyzer)
     workflow.add_node("summary_generator", summary_generator)
+    workflow.add_node("none_summary_generator", none_summary_generator)
 
     # 엣지 추가
-    # workflow.add_edge(START, "founder_identifier")
-    workflow.set_entry_point("founder_identifier")
-    
+    workflow.add_edge(START, "founder_identifier")
     workflow.add_edge("founder_identifier", "founder_relevance_check")
     workflow.add_conditional_edges(
         "founder_relevance_check",
         is_relevant,
         {
             "yes": "profile_collector",
-            "no": "founder_identifier"  # 창업자 식별 실패 시 다시 시도
+            "no": "founder_identifier",  # 재시도 카운터는 founder_identifier 내부에서 관리
+            "none": "none_summary_generator"  # 재시도 횟수 초과 시 대체 요약
         }
     )
+
     workflow.add_edge("profile_collector", "profile_relevance_check")
     workflow.add_conditional_edges(
         "profile_relevance_check",
         is_relevant,
         {
             "yes": "reputation_analyzer",
-            "no": "profile_collector"  # 프로필 정보 관련성 없으면 다시 검색
+            "no": "founder_identifier",  # 프로필 정보 관련성 없으면 다시 창업자 식별부터
+            "none": "none_summary_generator"  # 재시도 횟수 초과 시 대체 요약
         }
     )
     workflow.add_edge("reputation_analyzer", "summary_generator")
     workflow.add_edge("summary_generator", END)
+    workflow.add_edge("none_summary_generator", END)
 
     # 그래프 컴파일
     memory = MemorySaver()
@@ -285,7 +337,8 @@ async def analyze_startup_founder(company_name: str, domain: str):
         sentiment_analysis="",
         final_summary="",
         messages=[],
-        relevance=False
+        relevance=False,
+        retry_count=0  # 초기 retry_count 설정
     )
 
     final_result = await app.ainvoke(inputs, config)
