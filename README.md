@@ -64,6 +64,11 @@
 ---
 
 ## 📁 Directory Structure
+<details>
+<summary>Click to toggle! Agents Workflow</summary>
+  <img src="https://github.com/user-attachments/assets/3281c8ab-26f4-404e-8023-8a55e9491132", alt="agents1">
+  <img src="https://github.com/user-attachments/assets/45bc23af-db87-4206-98ce-6d05d9f1be4a", alt="agents2">
+</details>
 
 ---
 
