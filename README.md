@@ -68,7 +68,7 @@
 </details>
 
 ---
-
+```
 ## 📁 Directory Structure
 📦 STARTUP-J...
  ┣ 📂 _pycache_
@@ -86,6 +86,8 @@
  ┣ 📜 main.ipynb
  ┣ 📜 README.md
  ┗ 📜 state.py
+```
+
 ---
 
 ## 💫 Contributors 
