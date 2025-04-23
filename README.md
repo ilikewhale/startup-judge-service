@@ -40,7 +40,7 @@
 |------------|-------------------------------------|
 | Framework  | LangGraph, LangChain, Python        |
 | LLM        | GPT-4o-mini          |
-| Retrieval  | Tavily API,  ㅣLangChain.PDFRetrievalChain       |
+| Retrieval  | Tavily API,  LangChain.PDFRetrievalChain       |
 
 ---
 
