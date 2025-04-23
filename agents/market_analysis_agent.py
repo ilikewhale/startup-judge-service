@@ -90,10 +90,9 @@ def market_analysis_agent(state: AgentState, domain, country):
         "input": f"{domain} 도메인/산업의 시장 분석을 수행해주세요. 특히 {country} 시장에 초점을 맞춰주세요."
     })
     
-
-    print("==========================================\n\n")
-    print(result)
-    print("==========================================\n\n")
+    # print("==========================================\n\n")
+    # print(result)
+    # print("==========================================\n\n")
 
     # 결과 처리 - AIMessage 형태의 최종 응답 확인
     final_responses = [msg for msg in result.get("messages", []) 
@@ -114,6 +113,7 @@ def market_analysis_agent(state: AgentState, domain, country):
     # }
     
     # 일반 시장 분석 결과 저장
-    state["market_analysis"]["general"] = analysis_output
+    state["market_analysis"] = analysis_output
+    # print(analysis_output)
     
     return analysis_output
