@@ -28,8 +28,10 @@
 
 ## ✅ Features
 
+- **Agentic RAG (Retrieval-Augmented Generation)** 기반의 멀티 에이전트 아키텍처
 - 다양한 형식의 외부 정보(PDF, 웹 등)를 자동 수집 및 정제
-- 기술력, 창업자 역량, 시장성, 법적 리스크 등 투자 판단 기준별 분석
+- 기술력, 창업자 역량, 시장성, 법적 리스크 등 주요 요소를 평가하는 전용 Agent 구성하여 투자 판단 기준별 분석
+- 병렬 실행 및 조건 기반 루프(flow control) 설계
 - 투자 적합성에 따른 **요약 리포트 자동 생성** (예: 유망 / 보류 / 회피)
 
 ---
@@ -64,7 +66,6 @@
 
 <details>
 <summary>Click to toggle! Agents Workflow</summary>
-  <img src="![스타트업 투자 평가 에이전트](https://github.com/user-attachments/assets/cabf7626-d641-4d92-8e03-5fda3396f4c0)"
   <img src="https://github.com/user-attachments/assets/3281c8ab-26f4-404e-8023-8a55e9491132", alt="agents1">
   <img src="https://github.com/user-attachments/assets/45bc23af-db87-4206-98ce-6d05d9f1be4a", alt="agents2">
 </details>
