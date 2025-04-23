@@ -25,7 +25,7 @@ class FounderState(TypedDict):
     retry_count: Annotated[int, "재시도 횟수"]  # 추가된 필드
 
 # 1. 창업자 식별 에이전트
-def founder_identifier(state: FounderState) -> FounderState:
+def founder_wedsearch(state: FounderState) -> FounderState:
     
     tavily = TavilySearch()
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
@@ -282,7 +282,7 @@ def makeWorkflow():
     workflow = StateGraph(FounderState)
 
     # 노드 추가
-    workflow.add_node("founder_identifier", founder_identifier)
+    workflow.add_node("founder_wedsearch", founder_wedsearch)
     workflow.add_node("founder_relevance_check", founder_relevance_check)
     workflow.add_node("profile_collector", profile_collector)
     workflow.add_node("profile_relevance_check", profile_relevance_check)
