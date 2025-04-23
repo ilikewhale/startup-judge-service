@@ -76,7 +76,7 @@ from weasyprint import HTML
 REPORT_TITLE = "SKALA AI 스타트업 투자 보고서"
 REPORT_PATH = "reports/startup_report.pdf"
 
-def generate_report(state: AgentState) -> str:
+def report_generator(state: AgentState) -> str:
     os.makedirs(os.path.dirname(REPORT_PATH), exist_ok=True)
 
     domain_market = state.get("market_analysis", {}).get("__domain_summary__", f"{state['domain']} 시장 분석 정보 없음")
