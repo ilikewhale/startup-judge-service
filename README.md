@@ -83,7 +83,7 @@
  ┣ 📂 competitor_analysis_agent
  ┣ 📜 .env
  ┣ 📜 .gitignore
- ┣ 📜 main.ipynb
+ ┣ 📜 main.py
  ┣ 📜 README.md
  ┗ 📜 state.py
 ```
