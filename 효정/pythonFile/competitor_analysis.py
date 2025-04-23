@@ -113,7 +113,9 @@ def makeGraph():
     workflow.add_node("relevance_check", relevance_check)
     workflow.add_node("llm_answer", llm_answer)
 
-    workflow.add_edge(START, "web_search")
+    # workflow.add_edge(START, "web_search")
+    workflow.set_entry_point("web_search")
+    
     workflow.add_edge("web_search", "relevance_check")  
     workflow.add_edge("llm_answer", END)  
 
@@ -125,8 +127,6 @@ def makeGraph():
             "no": "web_search",  
         },
     )
-
-    workflow.set_entry_point("web_search")
 
     memory = MemorySaver()
     return workflow.compile(checkpointer=memory)
