@@ -241,7 +241,9 @@ def makeWorkflow():
     workflow.add_node("summary_generator", summary_generator)
 
     # 엣지 추가
-    workflow.add_edge(START, "founder_identifier")
+    # workflow.add_edge(START, "founder_identifier")
+    workflow.set_entry_point("founder_identifier")
+    
     workflow.add_edge("founder_identifier", "founder_relevance_check")
     workflow.add_conditional_edges(
         "founder_relevance_check",

@@ -1,4 +1,21 @@
-from util.imports import *
+from langchain_teddynote.tools.tavily import TavilySearch
+
+from typing import Annotated, TypedDict
+from langgraph.graph.message import add_messages
+
+from langchain_teddynote.evaluator import GroundednessChecker
+from langchain_teddynote.messages import messages_to_history
+
+from langgraph.graph import END, StateGraph
+from langgraph.checkpoint.memory import MemorySaver
+
+from langchain_core.runnables import RunnableConfig
+from langchain_teddynote.messages import stream_graph, random_uuid
+from langgraph.graph import StateGraph, START, END
+
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import BaseMessage
+import os
 
 class WebSearchState(TypedDict):  
     question: Annotated[str, "Question"] # 질문
@@ -96,7 +113,9 @@ def makeGraph():
     workflow.add_node("relevance_check", relevance_check)
     workflow.add_node("llm_answer", llm_answer)
 
-    workflow.add_edge(START, "web_search")
+    workflow.set_entry_point("web_search")
+
+    # workflow.add_edge(START, "web_search")
     workflow.add_edge("web_search", "relevance_check")  
     workflow.add_edge("llm_answer", END)  
 
@@ -108,8 +127,6 @@ def makeGraph():
             "no": "web_search",  
         },
     )
-
-    workflow.set_entry_point("web_search")
 
     memory = MemorySaver()
     return workflow.compile(checkpointer=memory)
