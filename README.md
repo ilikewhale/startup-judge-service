@@ -70,7 +70,7 @@
 ---
 ```
 ## 📁 Directory Structure
-📦 STARTUP-J...
+📦 STARTUP-JUDGE-SERVICE
  ┣ 📂 _pycache_
  ┣ 📂 agents
  ┣ 📂 data
