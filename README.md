@@ -10,7 +10,8 @@
 - **Objective**
   
   사용자가 제시한 도메인 내 여러 AI 스타트업을 자동으로 탐색하고,  
-  각 스타트업의 핵심 정보를 수집하여 투자 적합성을 종합적으로 평가합니다.
+  도메인의 시장성 분석과 각 스타트업의 핵심 정보(기술력, 리스크, 창업자, 경쟁사)를 수집하여</br>
+  투자 적합성을 종합적으로 평가합니다.
 
 - **Method**
   - **Agentic RAG (Retrieval-Augmented Generation)** 기반의 멀티 에이전트 아키텍처
@@ -39,7 +40,7 @@
 |------------|-------------------------------------|
 | Framework  | LangGraph, LangChain, Python        |
 | LLM        | GPT-4o-mini          |
-| Retrieval  | Tavily API, FAISS         |
+| Retrieval  | Tavily API,  LangChain.PDFRetrievalChain       |
 
 ---
 
@@ -60,7 +61,11 @@
 
 ## 🧩 Architecture  
 (그래프 이미지 삽입 예정 - 멀티 에이전트 기반 평가 흐름)
-
+<details>
+<summary>Click to toggle! Agents Workflow</summary>
+  <img src="https://github.com/user-attachments/assets/3281c8ab-26f4-404e-8023-8a55e9491132", alt="agents1">
+  <img src="https://github.com/user-attachments/assets/45bc23af-db87-4206-98ce-6d05d9f1be4a", alt="agents2">
+</details>
 ---
 
 ## 📁 Directory Structure
@@ -74,6 +79,6 @@
 | :--------: | :--------: | :--------: | :--------: | :--------: | :------: |
 | <img src="https://avatars.githubusercontent.com/u/98153670?v=4" width="100" height="100"> | <img src="https://avatars.githubusercontent.com/u/74577811?v=4" width="100" height="100"> | <img src="https://avatars.githubusercontent.com/u/122194456?v=4" width="100" height="100"> | <img src="https://avatars.githubusercontent.com/u/60501045?v=4" width="100" height="100"> | <img src="https://avatars.githubusercontent.com/u/79013520?v=4" width="100" height="100"> | <img src="https://avatars.githubusercontent.com/u/97718539?v=4" width="100" height="100"> |
 | [@ilikewhale](https://github.com/ilikewhale) | [@alswnsp411](https://github.com/alswnsp411) | [@zi0-hand](https://github.com/zi0-hand) | [@ww5702](https://github.com/ww5702) | [@world-dv](https://github.com/world-dv) | [@zinsile](https://github.com/zinsile) |
-| 창업자 평판 에이전트 | 시장성 분석 에이전트 | 법적/규제 리스크 분석 에이전트 | 스타트업탐색, 투자판단, 보고서 생성 에이전트 | 경쟁사 비교 에이전트 | 기술 요약 에이전트 |
+| 창업자 평판 에이전트 구현 | 시장성 분석 에이전트 구현 | 법적/규제 리스크 분석 에이전트 구현 | 스타트업탐색, 투자판단, 보고서 생성 에이전트 구현 | 경쟁사 비교 에이전트 구현 | 기술 요약 에이전트 구현 |
 
 </div>
