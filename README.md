@@ -60,7 +60,8 @@
 ---
 
 ## 🧩 Architecture  
-(그래프 이미지 삽입 예정 - 멀티 에이전트 기반 평가 흐름)
+![image](https://github.com/user-attachments/assets/1efeb2da-6e61-4d10-b085-1de38de29b62)
+
 <details>
 <summary>Click to toggle! Agents Workflow</summary>
   <img src="![스타트업 투자 평가 에이전트](https://github.com/user-attachments/assets/cabf7626-d641-4d92-8e03-5fda3396f4c0)"
